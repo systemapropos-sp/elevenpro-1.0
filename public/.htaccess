@@ -1,0 +1,20 @@
+# ============================================
+# CONFIGURACIÓN APACHE - PUBLIC
+# ElevenPro POS - https://elevenpropos.com
+# ============================================
+
+RewriteEngine On
+RewriteBase /
+
+# Si el archivo o directorio existe, servirlo directamente
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirigir todas las peticiones API al router
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Proteger directorio uploads
+RewriteRule ^uploads/(.*)$ - [F,L]
+
+# Configuración PHP
+php_value display_errors Off
