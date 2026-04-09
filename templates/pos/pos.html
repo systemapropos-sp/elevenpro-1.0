@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punto de Venta - ElevenPro POS</title>
+    <link rel="stylesheet" href="/public/assets/css/pos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="pos-page">
+    <!-- Header -->
+    <header class="pos-header">
+        <div class="header-left">
+            <div class="logo">
+                <i class="fas fa-cash-register"></i>
+                <span>ElevenPro POS</span>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchProduct" placeholder="Buscar producto (F10) o escanear código...">
+                <button class="btn-scan" onclick="startScanner()">
+                    <i class="fas fa-barcode"></i>
+                </button>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-info">
+                <span id="userName">Cajero</span>
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pos-main">
+        <!-- Left Panel - Products -->
+        <div class="products-panel">
+            <!-- Categories -->
+            <div class="categories-bar">
+                <button class="category-btn active" data-category="all">
+                    <i class="fas fa-th"></i>
+                    <span>Todos</span>
+                </button>
+                <div id="categoriesList" class="categories-list">
+                    <!-- Categories loaded dynamically -->
+                </div>
+            </div>
+            
+            <!-- Products Grid -->
+            <div class="products-grid" id="productsGrid">
+                <!-- Products loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Right Panel - Cart -->
+        <div class="cart-panel">
+            <div class="cart-header">
+                <h3><i class="fas fa-shopping-cart"></i> Ticket <span id="ticketNumber">#001</span></h3>
+                <button class="btn-clear" onclick="clearCart()">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            
+            <!-- Cart Items -->
+            <div class="cart-items" id="cartItems">
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-basket"></i>
+                    <p>No hay productos en el carrito</p>
+                </div>
+            </div>
+            
+            <!-- Cart Totals -->
+            <div class="cart-totals">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <div class="total-row">
+                    <span>Descuento:</span>
+                    <span id="discount">$0.00</span>
+                </div>
+                <div class="total-row">
+                    <span>Impuesto (16%):</span>
+                    <span id="tax">$0.00</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>TOTAL:</span>
+                    <span id="total">$0.00</span>
+                </div>
+            </div>
+            
+            <!-- Cart Actions -->
+            <div class="cart-actions">
+                <button class="btn btn-secondary" onclick="holdOrder()">
+                    <i class="fas fa-pause"></i>
+                    <span>Pausar</span>
+                </button>
+                <button class="btn btn-danger" onclick="cancelOrder()">
+                    <i class="fas fa-times"></i>
+                    <span>Cancelar</span>
+                </button>
+                <button class="btn btn-primary btn-pay" onclick="openPaymentModal()">
+                    <i class="fas fa-cash-register"></i>
+                    <span>Cobrar (F12)</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Quick Actions Bar -->
+    <div class="quick-actions">
+        <button class="quick-btn" onclick="openQuickProduct()">
+            <i class="fas fa-plus"></i>
+            <span>Producto Rápido</span>
+        </button>
+        <button class="quick-btn" onclick="openDiscountModal()">
+            <i class="fas fa-percent"></i>
+            <span>Descuento</span>
+        </button>
+        <button class="quick-btn" onclick="openCustomerModal()">
+            <i class="fas fa-user"></i>
+            <span>Cliente</span>
+        </button>
+        <button class="quick-btn" onclick="openHeldOrders()">
+            <i class="fas fa-list"></i>
+            <span>Pausados</span>
+        </button>
+        <button class="quick-btn" onclick="openCalculator()">
+            <i class="fas fa-calculator"></i>
+            <span>Calculadora</span>
+        </button>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content payment-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-cash-register"></i> Cobrar</h2>
+                <button class="btn-close" onclick="closeModal('paymentModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-total">
+                    <span>Total a pagar:</span>
+                    <span id="paymentTotal">$0.00</span>
+                </div>
+                
+                <div class="payment-methods">
+                    <button class="payment-method active" data-method="cash">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Efectivo</span>
+                    </button>
+                    <button class="payment-method" data-method="card">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Tarjeta</span>
+                    </button>
+                    <button class="payment-method" data-method="transfer">
+                        <i class="fas fa-university"></i>
+                        <span>Transferencia</span>
+                    </button>
+                    <button class="payment-method" data-method="credit">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Crédito</span>
+                    </button>
+                </div>
+                
+                <div class="cash-payment" id="cashPaymentSection">
+                    <div class="form-group">
+                        <label>Efectivo recibido:</label>
+                        <input type="number" id="cashReceived" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="change-display">
+                        <span>Cambio:</span>
+                        <span id="changeAmount">$0.00</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Notas (opcional):</label>
+                    <textarea id="paymentNotes" rows="2" placeholder="Notas sobre la venta..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('paymentModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="processPayment()">
+                    <i class="fas fa-check"></i>
+                    Completar Venta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/public/assets/js/pos.js"></script>
+    <script>
+        // POS Application State
+        let cart = [];
+        let products = [];
+        let categories = [];
+        let currentCategory = 'all';
+        let discount = 0;
+        let customer = null;
+        let heldOrders = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadCategories();
+            loadProducts();
+            setupKeyboardShortcuts();
+            loadUserInfo();
+        });
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Load user info
+        function loadUserInfo() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('userName').textContent = user.name || 'Cajero';
+        }
+
+        // Setup keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // F10 - Search
+                if (e.key === 'F10') {
+                    e.preventDefault();
+                    document.getElementById('searchProduct').focus();
+                }
+                // F12 - Pay
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                    openPaymentModal();
+                }
+                // ESC - Close modal
+                if (e.key === 'Escape') {
+                    closeAllModals();
+                }
+            });
+        }
+
+        // Load categories
+        async function loadCategories() {
+            try {
+                const response = await apiGet('/categories');
+                if (response.success) {
+                    categories = response.data;
+                    renderCategories();
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Render categories
+        function renderCategories() {
+            const container = document.getElementById('categoriesList');
+            container.innerHTML = categories.map(cat => `
+                <button class="category-btn" data-category="${cat.id}" onclick="filterByCategory(${cat.id})">
+                    <i class="fas ${cat.icon || 'fa-box'}"></i>
+                    <span>${cat.name}</span>
+                </button>
+            `).join('');
+        }
+
+        // Load products
+        async function loadProducts(categoryId = null) {
+            try {
+                let url = '/products';
+                if (categoryId) {
+                    url += `?category=${categoryId}`;
+                }
+                const response = await apiGet(url);
+                if (response.success) {
+                    products = response.data.items || [];
+                    renderProducts();
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+
+        // Render products grid
+        function renderProducts() {
+            const container = document.getElementById('productsGrid');
+            
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="no-products">
+                        <i class="fas fa-box-open"></i>
+                        <p>No hay productos disponibles</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = products.map(product => `
+                <div class="product-card" onclick="addToCart(${product.id})">
+                    <div class="product-image">
+                        ${product.image_url 
+                            ? `<img src="${product.image_url}" alt="${product.name}" loading="lazy">`
+                            : `<i class="fas fa-box"></i>`
+                        }
+                    </div>
+                    <div class="product-info">
+                        <h4>${product.name}</h4>
+                        <div class="product-price">$${parseFloat(product.price).toFixed(2)}</div>
+                        <div class="product-stock ${product.stock <= product.min_stock ? 'low' : ''}">
+                            <i class="fas fa-cubes"></i> ${product.stock}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter by category
+        function filterByCategory(categoryId) {
+            currentCategory = categoryId;
+            
+            // Update active state
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-category="${categoryId}"]`).classList.add('active');
+            
+            loadProducts(categoryId === 'all' ? null : categoryId);
+        }
+
+        // Add to cart
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            if (product.stock <= 0) {
+                showToast('Producto sin stock', 'error');
+                return;
+            }
+            
+            const existingItem = cart.find(item => item.product_id === productId);
+            
+            if (existingItem) {
+                if (existingItem.quantity >= product.stock) {
+                    showToast('Stock insuficiente', 'error');
+                    return;
+                }
+                existingItem.quantity++;
+                existingItem.total = existingItem.quantity * existingItem.price;
+            } else {
+                cart.push({
+                    product_id: product.id,
+                    name: product.name,
+                    price: parseFloat(product.price),
+                    quantity: 1,
+                    total: parseFloat(product.price),
+                    image_url: product.image_url
+                });
+            }
+            
+            renderCart();
+            showToast(`${product.name} agregado`, 'success');
+        }
+
+        // Render cart
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-basket"></i>
+                        <p>No hay productos en el carrito</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = cart.map((item, index) => `
+                    <div class="cart-item">
+                        <div class="item-image">
+                            ${item.image_url 
+                                ? `<img src="${item.image_url}" alt="${item.name}">`
+                                : `<i class="fas fa-box"></i>`
+                            }
+                        </div>
+                        <div class="item-details">
+                            <h4>${item.name}</h4>
+                            <div class="item-price">$${item.price.toFixed(2)}</div>
+                        </div>
+                        <div class="item-quantity">
+                            <button onclick="updateQuantity(${index}, -1)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span>${item.quantity}</span>
+                            <button onclick="updateQuantity(${index}, 1)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="item-total">$${item.total.toFixed(2)}</div>
+                        <button class="btn-remove" onclick="removeFromCart(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+            
+            updateTotals();
+        }
+
+        // Update quantity
+        function updateQuantity(index, change) {
+            const item = cart[index];
+            const product = products.find(p => p.id === item.product_id);
+            
+            const newQuantity = item.quantity + change;
+            
+            if (newQuantity <= 0) {
+                removeFromCart(index);
+                return;
+            }
+            
+            if (product && newQuantity > product.stock) {
+                showToast('Stock insuficiente', 'error');
+                return;
+            }
+            
+            item.quantity = newQuantity;
+            item.total = item.quantity * item.price;
+            
+            renderCart();
+        }
+
+        // Remove from cart
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        // Update totals
+        function updateTotals() {
+            const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+            const tax = subtotal * 0.16;
+            const total = subtotal + tax - discount;
+            
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+            document.getElementById('discount').textContent = `$${discount.toFixed(2)}`;
+            document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('paymentTotal').textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Clear cart
+        function clearCart() {
+            if (cart.length === 0) return;
+            
+            if (confirm('¿Deseas vaciar el carrito?')) {
+                cart = [];
+                discount = 0;
+                renderCart();
+            }
+        }
+
+        // Cancel order
+        function cancelOrder() {
+            if (cart.length === 0) return;
+            
+            if (confirm('¿Deseas cancelar esta venta?')) {
+                cart = [];
+                discount = 0;
+                customer = null;
+                renderCart();
+                showToast('Venta cancelada', 'info');
+            }
+        }
+
+        // Hold order
+        function holdOrder() {
+            if (cart.length === 0) {
+                showToast('El carrito está vacío', 'error');
+                return;
+            }
+            
+            heldOrders.push({
+                id: Date.now(),
+                cart: [...cart],
+                total: cart.reduce((sum, item) => sum + item.total, 0),
+                time: new Date().toLocaleTimeString()
+            });
+            
+            cart = [];
+            renderCart();
+            showToast('Orden pausada', 'success');
+        }
+
+        // Open payment modal
+        function openPaymentModal() {
+            if (cart.length === 0) {
+                showToast('El carrito está vacío', 'error');
+                return;
+            }
+            
+            document.getElementById('paymentModal').classList.add('active');
+            document.getElementById('cashReceived').focus();
+        }
+
+        // Process payment
+        async function processPayment() {
+            const paymentMethod = document.querySelector('.payment-method.active')?.dataset.method || 'cash';
+            const cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
+            const notes = document.getElementById('paymentNotes').value;
+            
+            const total = parseFloat(document.getElementById('total').textContent.replace('$', ''));
+            
+            if (paymentMethod === 'cash' && cashReceived < total) {
+                showToast('Efectivo insuficiente', 'error');
+                return;
+            }
+            
+            const saleData = {
+                items: cart.map(item => ({
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    unit_price: item.price
+                })),
+                payment_method: paymentMethod,
+                cash_received: cashReceived,
+                discount: discount,
+                notes: notes
+            };
+            
+            try {
+                const response = await apiPost('/sales/create', saleData);
+                
+                if (response.success) {
+                    showToast('Venta completada exitosamente', 'success');
+                    
+                    // Print receipt
+                    if (response.data.receipt?.url) {
+                        window.open(response.data.receipt.url, '_blank');
+                    }
+                    
+                    // Reset cart
+                    cart = [];
+                    discount = 0;
+                    renderCart();
+                    closeModal('paymentModal');
+                } else {
+                    showToast(response.message || 'Error al procesar la venta', 'error');
+                }
+            } catch (error) {
+                showToast('Error de conexión', 'error');
+                console.error(error);
+            }
+        }
+
+        // Calculate change
+        document.getElementById('cashReceived')?.addEventListener('input', (e) => {
+            const received = parseFloat(e.target.value) || 0;
+            const total = parseFloat(document.getElementById('total').textContent.replace('$', ''));
+            const change = Math.max(0, received - total);
+            document.getElementById('changeAmount').textContent = `$${change.toFixed(2)}`;
+        });
+
+        // Payment method selection
+        document.querySelectorAll('.payment-method').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.payment-method').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const method = btn.dataset.method;
+                document.getElementById('cashPaymentSection').style.display = method === 'cash' ? 'block' : 'none';
+            });
+        });
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close all modals
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
+
+        // Placeholder functions
+        function startScanner() { showToast('Escáner no disponible', 'info'); }
+        function openQuickProduct() { showToast('Producto rápido no disponible', 'info'); }
+        function openDiscountModal() { showToast('Descuento no disponible', 'info'); }
+        function openCustomerModal() { showToast('Clientes no disponible', 'info'); }
+        function openHeldOrders() { showToast('Órdenes pausadas no disponible', 'info'); }
+        function openCalculator() { showToast('Calculadora no disponible', 'info'); }
+    </script>
+</body>
+</html>
